@@ -174,7 +174,8 @@ interface SettingsPageProps {
     onLogout: () => void;
 }
 
-export const SettingsPage: FC<SettingsPageProps> = ({ onLogout }) => {
+
+export const SettingsPage: React.FC<SettingsPageProps> = ({ onLogout }) => {
     const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
     const [openItem, setOpenItem] = useState<string | null>('account');
 

@@ -3,7 +3,7 @@ import { Page } from '../types';
 import { 
   LayoutGridIcon, TargetIcon, BookOpenIcon, 
   CircleHelpIcon, FlagIcon, MusicNoteIcon, HeartPulseIcon, ChevronLeftIcon,
-  LogOutIcon, SettingsIcon, AppleIcon, ImageIcon, PenSquareIcon, MessageSquareIcon, ZenArcadeIcon, MoreHorizontalIcon, XMarkIcon
+  LogOutIcon, SettingsIcon, AppleIcon, ImageIcon, PenSquareIcon, MessageSquareIcon, ZenArcadeIcon, MoreHorizontalIcon, XMarkIcon, CompassIcon
 } from './IconComponents';
 
 interface SidebarProps {
@@ -18,14 +18,15 @@ const mainNavItems = [
     { icon: MessageSquareIcon, page: 'aiTherapist' as const, label: 'AI Therapist' },
     { icon: BookOpenIcon, page: 'meditation' as const, label: 'Meditation' },
     { icon: PenSquareIcon, page: 'journal' as const, label: 'Journal' },
+    { icon: ImageIcon, page: 'imageStudio' as const, label: 'Image Studio' },
+    { icon: AppleIcon, page: 'diet' as const, label: 'Diet Tracker' },
+    { icon: ZenArcadeIcon, page: 'calmArcade' as const, label: 'Calm Arcade' },
+    { icon: CompassIcon, page: 'explore' as const, label: 'Explore' },
 ];
 
 const moreNavItems = [
     { icon: TargetIcon, page: 'predictor' as const, label: 'Predictor' },
     { icon: MusicNoteIcon, page: 'music' as const, label: 'Music' },
-    { icon: ImageIcon, page: 'imageStudio' as const, label: 'Image Studio' },
-    { icon: AppleIcon, page: 'diet' as const, label: 'Diet Tracker' },
-    { icon: ZenArcadeIcon, page: 'calmArcade' as const, label: 'Calm Arcade' },
     { icon: SettingsIcon, page: 'settings' as const, label: 'Settings' },
 ];
 

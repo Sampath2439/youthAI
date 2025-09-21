@@ -166,7 +166,7 @@ export const AppleIcon: React.FC<IconProps> = ({ className }) => (
 
 export const ImageIcon: React.FC<IconProps> = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 0 1-.75 0 .375.375 0 0 1 .75 0Z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
   </svg>
 );
 
@@ -352,4 +352,52 @@ export const MoreHorizontalIcon: React.FC<IconProps> = ({ className }) => (
         <circle cx="19" cy="12" r="1" />
         <circle cx="5" cy="12" r="1" />
     </svg>
+);
+
+export const SunIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2" />
+    <path d="M12 20v2" />
+    <path d="M4.93 4.93l1.41 1.41" />
+    <path d="M17.66 17.66l1.41 1.41" />
+    <path d="M2 12h2" />
+    <path d="M20 12h2" />
+    <path d="M4.93 19.07l1.41-1.41" />
+    <path d="M17.66 6.34l1.41-1.41" />
+  </svg>
+);
+
+export const ShieldIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+
+export const LeafIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 2 19 2c1 2 2 4 2 7 0 1.1-.3 2.1-.7 3.1C15.5 15.3 12 17.3 11 20Z" />
+    <path d="M2 21c0-3 1-4 2-4s2 1 3 4c1 2 1 3 3 3s2-1 3-3c2-4 1-6 0-8" />
+    <path d="M2 21c1 0 2-1 3-3s1-3 3-3 2 1 3 3c1 2 1 3 3 3s2-1 3-3c-1-2-2-4-2-7" />
+  </svg>
+);
+
+export const CloudIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+  </svg>
+);
+
+export const CompassIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M16.5 16.5 12 12" />
+    <path d="M12 12 7.5 7.5" />
+    <circle cx="12" cy="12" r="10" />
+    <path d="m12 2v2" />
+    <path d="m22 12h-2" />
+    <path d="m12 22v-2" />
+    <path d="m2 12h2" />
+    <path d="m15 9-3 3-3-3" />
+    <path d="m12 15 3-3-3-3" />
+  </svg>
 );

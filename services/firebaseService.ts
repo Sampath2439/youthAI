@@ -5,13 +5,12 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCS-AtUQuJDy0fTc6-ecXYRjQZ4D1sZJcc",
-  authDomain: "mentalwellnessai-cf684.firebaseapp.com",
-  databaseURL: "https://mentalwellnessai-cf684-default-rtdb.firebaseio.com",
-  projectId: "mentalwellnessai-cf684",
-  storageBucket: "mentalwellnessai-cf684.firebasestorage.app",
-  messagingSenderId: "964649666556",
-  appId: "1:964649666556:web:3ffc7fbfbec27c8a60d479"
+  apiKey: "AIzaSyAnKuY5iv77yFQG04BrMQc3BRiKjgqaSuI",
+  authDomain: "mentalwelllnessai.firebaseapp.com",
+  projectId: "mentalwelllnessai",
+  storageBucket: "mentalwelllnessai.firebasestorage.app",
+  messagingSenderId: "1099499604519",
+  appId: "1:1099499604519:web:8fa555f9bdf51ef36d5c02"
 };
 
 const app = initializeApp(firebaseConfig);

@@ -135,101 +135,73 @@ const PredictorPage: React.FC<{ onNavigate: (page: Page, payload?: { initialProm
   );
 };
 
-const App: React.FC = () => {
-  const [page, setPage] = useState<Page>('landing');
-  const [theme, setTheme] = useState<Theme>('light');
+import { ExplorePage } from './components/ExplorePage';
+
+function App() {
+  const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
-  const [initialImagePrompt, setInitialImagePrompt] = useState<string | null>(null);
-  
-  // New state for game mode
-  const [isGameMode, setIsGameMode] = useState(false);
-  const [gameSubtitle, setGameSubtitle] = useState<React.ReactNode | null>(null);
-  const [gameBackAction, setGameBackAction] = useState<(() => void) | null>(null);
+  const [isGameMode, setIsGameMode] = useState(false); // Define isGameMode
+  const [theme, setTheme] = useState<Theme>('light'); // Placeholder for theme
+  const [gameSubtitle, setGameSubtitle] = useState<string>(''); // Placeholder for gameSubtitle
 
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-  
+  const handleNavigate = (page: Page, payload?: { initialPrompt?: string }) => {
+    setCurrentPage(page);
+    // Logic to set isGameMode based on page, if needed
+    // For example: setIsGameMode(page === 'calmArcade' || page === 'someOtherGamePage');
+  };
 
-  // Set initial sidebar state based on screen size
-  useEffect(() => {
-    const checkSize = () => {
-        if (window.innerWidth < 1024) {
-            setIsSidebarExpanded(false);
-        } else {
-            setIsSidebarExpanded(true);
-        }
-    };
-    checkSize();
-    window.addEventListener('resize', checkSize);
-    return () => window.removeEventListener('resize', checkSize);
-  }, []);
+  const toggleSidebar = () => {
+    setIsSidebarExpanded(prev => !prev);
+  };
 
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  }; // Placeholder for toggleTheme
 
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarExpanded(prev => !prev);
-  }, []);
-  
-  const handleLogin = useCallback(() => {
-    setPage('dashboard');
-  }, []);
-
-  const handleLogout = useCallback(() => {
-    setPage('landing');
-  }, []);
-  
-  const handleNavigate = (targetPage: Page, payload?: { initialPrompt?: string }) => {
-    if (payload?.initialPrompt) {
-        setInitialImagePrompt(payload.initialPrompt);
-    }
-    // Reset game mode when navigating away
+  const gameBackAction = () => {
+    // Placeholder for game back action
     setIsGameMode(false);
-    setGameSubtitle(null);
-    setGameBackAction(null);
-    setPage(targetPage);
+    setGameSubtitle('');
+  }; // Placeholder for gameBackAction
+
+  const handleLogin = () => {
+    setCurrentPage('dashboard');
   };
-  
+
   const renderPage = () => {
-    switch(page) {
+    switch (currentPage) {
+      case 'landing':
+        return <LandingPage onLogin={handleLogin} />;
       case 'dashboard':
-        return <DashboardPage onNavigate={handleNavigate} />;
+        return <DashboardPage />;
       case 'predictor':
-        return <PredictorPage onNavigate={handleNavigate} />;
+        return <PredictorPage />;
       case 'aiTherapist':
         return <CoachPage />;
       case 'meditation':
         return <MeditationPage />;
       case 'music':
         return <MusicPage />;
+      case 'settings':
+        return <SettingsPage />;
+      case 'diet':
+        return <DietPage />;
+      case 'imageStudio':
+        return <ImageStudioPage />;
       case 'journal':
         return <JournalPage />;
-      case 'imageStudio':
-        return <ImageStudioPage initialPrompt={initialImagePrompt} />;
-      case 'diet':
-        return <DietPage onNavigate={handleNavigate} />;
-      case 'calmArcade':
-        return <CalmArcadePage 
-                    onSetGameMode={setIsGameMode}
-                    onSetGameSubtitle={setGameSubtitle}
-                    onSetGameBackAction={setGameBackAction}
-                />;
-      case 'settings':
-        return <SettingsPage onLogout={handleLogout} />;
       case 'help':
         return <HelpPage />;
+      case 'calmArcade':
+        return <CalmArcadePage />;
+      case 'explore':
+        return <ExplorePage onNavigate={setCurrentPage} />;
       default:
-        return <DashboardPage onNavigate={handleNavigate} />;
+        return <DashboardPage />;
     }
   };
 
-  if (page === 'landing') {
+  if (currentPage === 'landing') {
     return <LandingPage onLogin={handleLogin} />;
   }
 
@@ -238,7 +210,7 @@ const App: React.FC = () => {
       <XPToast />
       {!isGameMode && (
         <Sidebar 
-          currentPage={page} 
+          currentPage={currentPage} 
           onNavigate={handleNavigate} 
           isExpanded={isSidebarExpanded}
           onToggle={toggleSidebar}
@@ -247,7 +219,7 @@ const App: React.FC = () => {
       <div className="flex-grow flex flex-col h-screen">
         <main className={`flex-grow overflow-y-auto flex flex-col ${isGameMode ? 'p-0' : 'p-6'}`}>
           <AppHeader 
-            currentPage={page} 
+            currentPage={currentPage} 
             theme={theme} 
             toggleTheme={toggleTheme} 
             onNavigate={handleNavigate}
