@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Page, Theme, Notification } from '../types';
 import { BellIcon, SettingsIcon, ChevronLeftIcon } from './IconComponents';
+import { BackButton } from './BackButton';
 
 interface AppHeaderProps {
   currentPage: Page;
@@ -121,9 +122,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({ currentPage, theme, toggleTheme, 
 
     return (
         <header className={`flex justify-between items-center flex-shrink-0 ${isGameMode ? 'p-4' : 'mb-6'}`}>
-            <div>
-                <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{title}</h1>
-                {isGameMode && subtitle && <div>{subtitle}</div>}
+            <div className="flex items-center gap-4">
+                {currentPage !== 'dashboard' && currentPage !== 'landing' && (
+                    <BackButton onBack={() => onNavigate('dashboard')} />
+                )}
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{title}</h1>
+                    {isGameMode && subtitle && <div>{subtitle}</div>}
+                </div>
             </div>
             <div className="flex items-center space-x-4">
                 <button
