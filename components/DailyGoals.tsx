@@ -1,67 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { DailyGoal } from '../types';
 import { FlagIcon } from './IconComponents';
-
-const GOALS_KEY = 'mindfulme-daily-goals';
-const GOALS_DATE_KEY = 'mindfulme-goals-date';
-
-const getTodayDateString = () => new Date().toISOString().split('T')[0];
+import { auth, db } from '../services/firebaseService';
+import { collection, query, where, getDocs, addDoc, updateDoc, serverTimestamp, doc } from 'firebase/firestore';
 
 export const DailyGoals: React.FC = () => {
     const [goals, setGoals] = useState<DailyGoal[]>([]);
     const [newGoalText, setNewGoalText] = useState('');
 
-    // Load goals from localStorage on initial render
     useEffect(() => {
-        const today = getTodayDateString();
-        const storedDate = localStorage.getItem(GOALS_DATE_KEY);
+        const loadGoals = async () => {
+            if (!auth.currentUser) return;
 
-        if (storedDate === today) {
-            const storedGoals = localStorage.getItem(GOALS_KEY);
-            if (storedGoals) {
-                try {
-                    const parsedGoals = JSON.parse(storedGoals);
-                    if (Array.isArray(parsedGoals)) {
-                         setGoals(parsedGoals);
-                    } else {
-                        setGoals([]);
-                    }
-                } catch (e) {
-                    setGoals([]);
-                }
+            const today = new Date();
+            const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+            const goalsCollection = collection(db, 'dailyGoals');
+            const q = query(
+                goalsCollection,
+                where("userId", "==", auth.currentUser.uid),
+                where("createdAt", ">=", startOfToday)
+            );
+
+            try {
+                const querySnapshot = await getDocs(q);
+                const fetchedGoals: DailyGoal[] = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                } as DailyGoal));
+                setGoals(fetchedGoals);
+                window.dispatchEvent(new CustomEvent('historyUpdated'));
+            } catch (error) {
+                console.error("Error fetching daily goals: ", error);
             }
-        } else {
-            // It's a new day, reset goals
-            localStorage.setItem(GOALS_KEY, JSON.stringify([]));
-            localStorage.setItem(GOALS_DATE_KEY, today);
-            setGoals([]);
-        }
+        };
+
+        loadGoals();
     }, []);
 
-    // Save goals to localStorage whenever they change
-    useEffect(() => {
-        localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
-         // Dispatch event so AI context can be updated if necessary elsewhere
-        window.dispatchEvent(new CustomEvent('historyUpdated'));
-    }, [goals]);
-    
-    const handleAddGoal = (e: React.FormEvent) => {
+    const handleAddGoal = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (newGoalText.trim() && goals.length < 3) {
-            const newGoal: DailyGoal = {
-                id: Date.now(),
+        if (newGoalText.trim() && goals.length < 3 && auth.currentUser) {
+            const newGoal: Omit<DailyGoal, 'id'> = {
                 text: newGoalText.trim(),
                 completed: false,
+                userId: auth.currentUser.uid,
+                createdAt: serverTimestamp(),
             };
-            setGoals([...goals, newGoal]);
-            setNewGoalText('');
+
+            try {
+                const docRef = await addDoc(collection(db, 'dailyGoals'), newGoal);
+                const newGoals = [...goals, { ...newGoal, id: docRef.id, createdAt: new Date() }];
+                setGoals(newGoals);
+                setNewGoalText('');
+                window.dispatchEvent(new CustomEvent('historyUpdated'));
+            } catch (error) {
+                console.error("Error adding goal: ", error);
+            }
         }
     };
 
-    const handleToggleCompletion = (id: number) => {
-        setGoals(goals.map(goal =>
-            goal.id === id ? { ...goal, completed: !goal.completed } : goal
-        ));
+    const handleToggleCompletion = async (id: string, completed: boolean) => {
+        if (!auth.currentUser) return;
+
+        const goalRef = doc(db, "dailyGoals", id);
+        try {
+            await updateDoc(goalRef, { completed: !completed });
+            const newGoals = goals.map(goal =>
+                goal.id === id ? { ...goal, completed: !goal.completed } : goal
+            );
+            setGoals(newGoals);
+            window.dispatchEvent(new CustomEvent('historyUpdated'));
+        } catch (error) {
+            console.error("Error updating goal: ", error);
+        }
     };
     
     const completedGoals = goals.filter(g => g.completed).length;
@@ -99,7 +111,7 @@ export const DailyGoals: React.FC = () => {
                                     type="checkbox"
                                     id={`goal-${goal.id}`}
                                     checked={goal.completed}
-                                    onChange={() => handleToggleCompletion(goal.id)}
+                                    onChange={() => handleToggleCompletion(goal.id!, goal.completed)}
                                     className="h-5 w-5 rounded border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
                                     aria-label={`Mark goal as complete`}
                                 />

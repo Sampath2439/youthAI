@@ -44,8 +44,11 @@ export interface PredictionResultData {
 }
 
 export interface ChatMessage {
+  id?: string; // Firestore document ID
   role: 'user' | 'model';
   text: string;
+  userId: string;
+  createdAt: any; // Firestore server timestamp
 }
 
 export interface BreathingExercise {
@@ -65,9 +68,11 @@ export interface MusicGenerationResult {
 }
 
 export interface DailyGoal {
-  id: number;
+  id?: string; // Firestore document ID
   text: string;
   completed: boolean;
+  userId: string;
+  createdAt: any; // Firestore server timestamp
 }
 
 export interface Notification {
@@ -108,8 +113,10 @@ export interface WellnessDataPoint {
 }
 
 export interface EmotionalSnapshot {
+    id?: string; // Firestore document ID
     date: string; // YYYY-MM-DD
     dataPoints: WellnessDataPoint[];
+    userId: string;
 }
 
 // New type for Daily Summary
@@ -122,11 +129,21 @@ export interface DailySummary {
 
 // New type for Journal feature
 export interface JournalEntry {
-  id: number; // timestamp
+  id?: string; // Firestore document ID
   date: string; // ISO string
   prompt: string;
   content: string;
   reflection?: string;
+  userId: string;
+  createdAt: any; // Firestore server timestamp
+}
+
+export interface MeditationSession {
+    id?: string; // Firestore document ID
+    userId: string;
+    exerciseName: string;
+    rating: number; // 1-5
+    createdAt: any; // Firestore server timestamp
 }
 
 // New types for Gamification
@@ -146,6 +163,7 @@ export interface GamificationData {
   streak: number;
   lastActivityDate: string | null; // YYYY-MM-DD
   badges: Record<BadgeId, boolean>;
+  userId: string;
 }
 
 // New types for Game Settings

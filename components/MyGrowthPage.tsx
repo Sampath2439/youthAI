@@ -87,9 +87,17 @@ export const MyGrowthPage: React.FC = () => {
     const [data, setData] = useState<GamificationData | null>(null);
     const [badges, setBadges] = useState<Badge[]>([]);
 
-    const updateData = () => {
-        setData(getGamificationData());
-        setBadges(getBadges());
+    const updateData = async () => {
+        try {
+            const [gamificationData, badgesData] = await Promise.all([
+                getGamificationData(),
+                getBadges(),
+            ]);
+            setData(gamificationData);
+            setBadges(badgesData);
+        } catch (error) {
+            console.error("Failed to load gamification data:", error);
+        }
     };
 
     useEffect(() => {

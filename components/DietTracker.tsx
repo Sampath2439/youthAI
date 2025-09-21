@@ -66,13 +66,14 @@ export const DietTracker: React.FC<DietTrackerProps> = ({ settings }) => {
 
 
     useEffect(() => {
-        const loadMeals = async () => {
+        const loadMealsAndSummary = async () => {
             const { auth, db } = await import('../services/firebaseService');
-            const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+            const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
 
             const user = auth.currentUser;
             if (!user) {
                 setMeals([]);
+                setDailySummary(null);
                 return;
             }
 
@@ -82,8 +83,9 @@ export const DietTracker: React.FC<DietTrackerProps> = ({ settings }) => {
             const endOfDay = new Date(today);
             endOfDay.setHours(23, 59, 59, 999);
 
+            // Load today's meals
             const mealsCollection = collection(db, 'meals');
-            const q = query(
+            const mealsQuery = query(
                 mealsCollection,
                 where("userId", "==", user.uid),
                 where("createdAt", ">=", startOfDay),
@@ -92,7 +94,7 @@ export const DietTracker: React.FC<DietTrackerProps> = ({ settings }) => {
             );
 
             try {
-                const querySnapshot = await getDocs(q);
+                const querySnapshot = await getDocs(mealsQuery);
                 const fetchedMeals: Meal[] = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data(),
@@ -101,29 +103,46 @@ export const DietTracker: React.FC<DietTrackerProps> = ({ settings }) => {
             } catch (error) {
                 console.error("Error fetching meals from Firestore: ", error);
             }
+
+            // Load yesterday's daily summary
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            const startOfYesterday = new Date(yesterdayStr);
+            startOfYesterday.setHours(0, 0, 0, 0);
+            const endOfYesterday = new Date(yesterdayStr);
+            endOfYesterday.setHours(23, 59, 59, 999);
+
+            const dailySummariesCollection = collection(db, 'dailySummaries');
+            const summaryQuery = query(
+                dailySummariesCollection,
+                where("userId", "==", user.uid),
+                where("date", "==", yesterdayStr),
+                limit(1)
+            );
+
+            try {
+                const summarySnapshot = await getDocs(summaryQuery);
+                if (!summarySnapshot.empty) {
+                    const summaryData = summarySnapshot.docs[0].data();
+                    setDailySummary({ score: summaryData.score, date: summaryData.date });
+                } else {
+                    setDailySummary(null);
+                }
+            } catch (error) {
+                console.error("Error fetching daily summary: ", error);
+            }
         };
 
-        loadMeals();
-
-        const today = getTodayDateString();
-        // Check for yesterday's summary
-        const lastDate = localStorage.getItem('mindfulme-diet-last-date');
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        
-        if (lastDate === yesterdayStr) {
-            const yesterdayScore = localStorage.getItem('mindfulme-diet-daily-score');
-            if (yesterdayScore) {
-                 setDailySummary({ score: parseFloat(yesterdayScore), date: yesterdayStr });
-            }
-        }
-        localStorage.setItem('mindfulme-diet-last-date', today);
+        loadMealsAndSummary();
 
     }, []);
 
     useEffect(() => {
-        setWeeklySummary(getWeeklyDietSummary());
+        const fetchWeeklySummary = async () => {
+            setWeeklySummary(await getWeeklyDietSummary());
+        };
+        fetchWeeklySummary();
     }, [meals]);
 
 
@@ -151,7 +170,7 @@ export const DietTracker: React.FC<DietTrackerProps> = ({ settings }) => {
             const updatedMeals = [...meals, mealWithId];
             setMeals(updatedMeals);
 
-            addWellnessDataPoint(newMeal.score * 10, 'diet');
+            await addWellnessDataPoint(newMeal.score * 10, 'diet');
             
             setIsLogging(false);
             setShowNextMealReminder(true);
@@ -162,9 +181,27 @@ export const DietTracker: React.FC<DietTrackerProps> = ({ settings }) => {
     
     // Calculate average score
     const averageScore = meals.length > 0 ? meals.reduce((acc, meal) => acc + meal.score, 0) / meals.length : 0;
-    if (averageScore > 0) {
-         localStorage.setItem('mindfulme-diet-daily-score', averageScore.toFixed(1));
-    }
+    
+    useEffect(() => {
+        const saveDailyScore = async () => {
+            if (averageScore > 0 && auth.currentUser) {
+                const todayStr = getTodayDateString();
+                const dailySummaryRef = doc(db, "dailySummaries", `${auth.currentUser.uid}_${todayStr}`);
+                
+                try {
+                    await setDoc(dailySummaryRef, {
+                        userId: auth.currentUser.uid,
+                        date: todayStr,
+                        score: parseFloat(averageScore.toFixed(1)),
+                        updatedAt: serverTimestamp(),
+                    }, { merge: true });
+                } catch (error) {
+                    console.error("Error saving daily summary score: ", error);
+                }
+            }
+        };
+        saveDailyScore();
+    }, [averageScore, auth.currentUser]);
 
     return (
         <>

@@ -3,8 +3,8 @@ import { JournalEntry } from '../types';
 import { getJournalPrompt, getJournalReflection } from '../services/geminiService';
 import { addXP } from '../services/gamificationService';
 import { PenSquareIcon, SparklesIcon, ChevronDownIcon } from './IconComponents';
-
-const JOURNAL_KEY = 'mindfulme-journal-entries';
+import { auth, db } from '../services/firebaseService';
+import { collection, query, where, getDocs, addDoc, updateDoc, serverTimestamp, orderBy, doc } from 'firebase/firestore';
 
 const getFormattedDate = (isoString: string) => {
     return new Date(isoString).toLocaleDateString('en-US', {
@@ -21,44 +21,63 @@ export const JournalPage: React.FC = () => {
     const [isLoadingPrompt, setIsLoadingPrompt] = useState(true);
     const [isLoadingReflection, setIsLoadingReflection] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [activeEntryId, setActiveEntryId] = useState<number | null>(null);
+    const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
 
     // Load entries and today's prompt
     useEffect(() => {
-        try {
-            const storedEntries = localStorage.getItem(JOURNAL_KEY);
-            const allEntries: JournalEntry[] = storedEntries ? JSON.parse(storedEntries) : [];
-            allEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-            const todayStr = new Date().toISOString().split('T')[0];
-            const existingToday = allEntries.find(e => e.date.startsWith(todayStr));
-            
-            setEntries(allEntries.filter(e => !e.date.startsWith(todayStr)));
-            
-            if (existingToday) {
-                setTodaysEntry(existingToday);
-                setPrompt(existingToday.prompt);
+        const loadJournalData = async () => {
+            if (!auth.currentUser) {
+                setError("Please log in to use the journal.");
                 setIsLoadingPrompt(false);
-            } else {
-                const fetchPrompt = async () => {
-                    try {
-                        setError(null);
-                        const newPrompt = await getJournalPrompt();
-                        setPrompt(newPrompt);
-                    } catch (err) {
-                        setError(err instanceof Error ? err.message : 'Could not load prompt.');
-                        setPrompt("What is on your mind today?"); // Fallback prompt
-                    } finally {
-                        setIsLoadingPrompt(false);
-                    }
-                };
-                fetchPrompt();
+                return;
             }
-        } catch (e) {
-            console.error("Failed to load journal entries.", e);
-            setError("Could not load your journal entries.");
-            setIsLoadingPrompt(false);
-        }
+
+            try {
+                const today = new Date();
+                const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+                const entriesCollection = collection(db, 'journalEntries');
+                const q = query(
+                    entriesCollection,
+                    where("userId", "==", auth.currentUser.uid),
+                    orderBy("createdAt", "desc")
+                );
+
+                const querySnapshot = await getDocs(q);
+                const allEntries: JournalEntry[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry));
+
+                const existingToday = allEntries.find(e => new Date(e.date) >= startOfToday);
+                
+                setEntries(allEntries.filter(e => new Date(e.date) < startOfToday));
+                
+                if (existingToday) {
+                    setTodaysEntry(existingToday);
+                    setPrompt(existingToday.prompt);
+                    setIsLoadingPrompt(false);
+                } else {
+                    fetchPrompt();
+                }
+            } catch (e) {
+                console.error("Failed to load journal entries.", e);
+                setError("Could not load your journal entries.");
+                setIsLoadingPrompt(false);
+            }
+        };
+
+        const fetchPrompt = async () => {
+            try {
+                setError(null);
+                const newPrompt = await getJournalPrompt();
+                setPrompt(newPrompt);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Could not load prompt.');
+                setPrompt("What is on your mind today?"); // Fallback prompt
+            } finally {
+                setIsLoadingPrompt(false);
+            }
+        };
+
+        loadJournalData();
     }, []);
     
     const handleContentChange = (content: string) => {
@@ -66,34 +85,44 @@ export const JournalPage: React.FC = () => {
             setTodaysEntry({ ...todaysEntry, content });
         } else if (prompt) {
             const todayStr = new Date().toISOString();
-            setTodaysEntry({
-                id: Date.now(),
-                date: todayStr,
-                prompt: prompt,
-                content: content,
-            });
+            if(auth.currentUser) {
+                setTodaysEntry({
+                    date: todayStr,
+                    prompt: prompt,
+                    content: content,
+                    userId: auth.currentUser.uid,
+                    createdAt: serverTimestamp(),
+                });
+            }
         }
     };
 
     const handleSaveAndReflect = async () => {
-        if (!todaysEntry || !todaysEntry.content.trim()) return;
+        if (!todaysEntry || !todaysEntry.content.trim() || !auth.currentUser) return;
 
         setIsLoadingReflection(true);
         setError(null);
         
         try {
             const reflection = await getJournalReflection(todaysEntry.content);
-            const finalEntry = { ...todaysEntry, reflection };
-            setTodaysEntry(finalEntry);
+            const finalEntry: JournalEntry = { ...todaysEntry, reflection };
 
-            // Save to local storage
-            const updatedEntries = [finalEntry, ...entries];
-            setEntries(updatedEntries.filter(e => !e.date.startsWith(finalEntry.date.split('T')[0])));
-            localStorage.setItem(JOURNAL_KEY, JSON.stringify(updatedEntries));
+            if (finalEntry.id) { // Existing entry, update it
+                const entryRef = doc(db, "journalEntries", finalEntry.id);
+                await updateDoc(entryRef, { 
+                    content: finalEntry.content,
+                    reflection: finalEntry.reflection 
+                });
+            } else { // New entry, add it
+                const docRef = await addDoc(collection(db, "journalEntries"), finalEntry);
+                finalEntry.id = docRef.id;
+            }
+
+            setTodaysEntry(finalEntry);
 
             // Add XP for journaling
             const xpGained = 10;
-            addXP(xpGained, 'first_journal');
+            await addXP(xpGained, 'first_journal');
             window.dispatchEvent(new CustomEvent('xp-gain', { detail: { amount: xpGained } }));
 
         } catch (err) {
@@ -176,7 +205,7 @@ export const JournalPage: React.FC = () => {
                         {entries.map(entry => (
                             <div key={entry.id} className="border border-slate-200 dark:border-slate-700 rounded-lg">
                                 <button
-                                    onClick={() => setActiveEntryId(activeEntryId === entry.id ? null : entry.id)}
+                                    onClick={() => setActiveEntryId(activeEntryId === entry.id ? null : entry.id!)}
                                     className="w-full flex justify-between items-center p-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50"
                                 >
                                     <div>

@@ -5,6 +5,8 @@ import { analyzeFoodImage } from '../services/geminiService';
 import { addWellnessDataPoint } from '../services/historyService';
 import { addXP } from '../services/gamificationService';
 import { AppleIcon, CheckCircleIcon, SparklesIcon, ExclamationTriangleIcon } from './IconComponents';
+import { auth, db } from '../services/firebaseService';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -31,6 +33,7 @@ interface DietPageProps {
 }
 
 export const DietPage: React.FC<DietPageProps> = ({ onNavigate }) => {
+    // This is a comment to force recompilation
     const [settings, setSettings] = useState<DietSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [meals, setMeals] = useState<Meal[]>([]);
@@ -54,36 +57,42 @@ export const DietPage: React.FC<DietPageProps> = ({ onNavigate }) => {
 
 
     useEffect(() => {
-        // Load settings
-        const storedSettings = localStorage.getItem('mindfulme-diet-settings');
-        if (storedSettings) {
-            setSettings(JSON.parse(storedSettings));
-        }
-        setIsLoading(false);
+        const loadData = async () => {
+            setIsLoading(true);
+            // Load settings from localStorage
+            const storedSettings = localStorage.getItem('mindfulme-diet-settings');
+            if (storedSettings) {
+                setSettings(JSON.parse(storedSettings));
+            }
 
-        // Load today's meals
-        const today = getTodayDateString();
-        const storedMeals = localStorage.getItem('mindfulme-diet-meals');
-        if (storedMeals) {
-            const allMeals: Meal[] = JSON.parse(storedMeals);
-            const todayMeals = allMeals.filter(m => m.timestamp.startsWith(today));
-            setMeals(todayMeals);
-            if(todayMeals.length > 0) setIsLogging(true);
-        }
+            // Load today's meals from Firestore
+            if (auth.currentUser) {
+                const today = new Date();
+                const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
+                const mealsCollection = collection(db, 'meals');
+                const q = query(
+                    mealsCollection,
+                    where("userId", "==", auth.currentUser.uid),
+                    where("createdAt", ">=", startOfToday)
+                );
+
+                try {
+                    const querySnapshot = await getDocs(q);
+                    const fetchedMeals: Meal[] = querySnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    } as Meal));
+                    setMeals(fetchedMeals);
+                    if(fetchedMeals.length > 0) setIsLogging(true);
+                } catch (error) {
+                    console.error("Error fetching meals: ", error);
+                }
+            }
+            setIsLoading(false);
+        };
+        loadData();
     }, []);
-    
-    useEffect(() => {
-        if(meals.length === 0 && !isLogging) return; // Don't run on initial load with no meals
-        const today = getTodayDateString();
-        const storedMeals = localStorage.getItem('mindfulme-diet-meals');
-        const allMeals: Meal[] = storedMeals ? JSON.parse(storedMeals) : [];
-        const otherDaysMeals = allMeals.filter(m => !m.timestamp.startsWith(today));
-        const updatedAllMeals = [...otherDaysMeals, ...meals];
-        localStorage.setItem('mindfulme-diet-meals', JSON.stringify(updatedAllMeals));
-        window.dispatchEvent(new CustomEvent('historyUpdated'));
-    }, [meals, isLogging]);
-
 
     const handleSaveSettings = (newSettings: DietSettings) => {
         localStorage.setItem('mindfulme-diet-settings', JSON.stringify(newSettings));
@@ -130,33 +139,38 @@ export const DietPage: React.FC<DietPageProps> = ({ onNavigate }) => {
         }
     };
     
-    const handleSavePhotoMeal = () => {
-        if (!analysisResult || !image) return;
+    const handleSavePhotoMeal = async () => {
+        if (!analysisResult || !image || !auth.currentUser) return;
 
-        const newMeal: Meal = {
+        const newMeal: Omit<Meal, 'id'> = {
             ...analysisResult,
-            id: Date.now(),
             photo: image.preview,
-            timestamp: new Date().toISOString(),
+            userId: auth.currentUser.uid,
+            createdAt: serverTimestamp(),
         };
         
-        setMeals(prev => [...prev, newMeal]);
-        addWellnessDataPoint(newMeal.score * 10, 'diet');
-        
-        // Add XP for logging a meal
-        const xpGained = 5;
-        addXP(xpGained, 'first_diet');
-        window.dispatchEvent(new CustomEvent('xp-gain', { detail: { amount: xpGained } }));
+        try {
+            const docRef = await addDoc(collection(db, "meals"), newMeal);
+            setMeals(prev => [...prev, { ...newMeal, id: docRef.id, createdAt: new Date() }]);
+            addWellnessDataPoint(newMeal.score * 10, 'diet');
+            
+            const xpGained = 5;
+            await addXP(xpGained, 'first_diet');
+            window.dispatchEvent(new CustomEvent('xp-gain', { detail: { amount: xpGained } }));
 
-        // Reset photo form
-        setImage(null);
-        setAnalysisResult(null);
-        setEditableAnalysisResult(null);
-        setIsEditingAnalysis(false);
+            setImage(null);
+            setAnalysisResult(null);
+            setEditableAnalysisResult(null);
+            setIsEditingAnalysis(false);
+        } catch (error) {
+            console.error("Error saving photo meal: ", error);
+        }
     };
 
-    const handleSaveManualMeal = (e: React.FormEvent) => {
+    const handleSaveManualMeal = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!auth.currentUser) return;
+
         const calories = parseInt(manualCalories, 10);
         if (isNaN(calories) || !manualMealName.trim()) return;
 
@@ -173,25 +187,28 @@ export const DietPage: React.FC<DietPageProps> = ({ onNavigate }) => {
         
         const placeholderIcon = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#e2e8f0"/><text x="50" y="55" font-family="sans-serif" font-size="40" text-anchor="middle" dominant-baseline="middle">🍽️</text></svg>')}`;
 
-        const newMeal: Meal = {
+        const newMeal: Omit<Meal, 'id'> = {
             ...manualResult,
-            id: Date.now(),
             photo: placeholderIcon,
-            timestamp: new Date().toISOString(),
+            userId: auth.currentUser.uid,
+            createdAt: serverTimestamp(),
         };
 
-        setMeals(prev => [...prev, newMeal]);
-        addWellnessDataPoint(newMeal.score * 10, 'diet');
-        
-        // Add XP for logging a meal
-        const xpGained = 5;
-        addXP(xpGained, 'first_diet');
-        window.dispatchEvent(new CustomEvent('xp-gain', { detail: { amount: xpGained } }));
-        
-        // Reset manual form
-        setManualMealName('');
-        setManualCalories('');
-        setManualClassification('Moderate');
+        try {
+            const docRef = await addDoc(collection(db, "meals"), newMeal);
+            setMeals(prev => [...prev, { ...newMeal, id: docRef.id, createdAt: new Date() }]);
+            addWellnessDataPoint(newMeal.score * 10, 'diet');
+            
+            const xpGained = 5;
+            await addXP(xpGained, 'first_diet');
+            window.dispatchEvent(new CustomEvent('xp-gain', { detail: { amount: xpGained } }));
+            
+            setManualMealName('');
+            setManualCalories('');
+            setManualClassification('Moderate');
+        } catch (error) {
+            console.error("Error saving manual meal: ", error);
+        }
     };
     
     const handleEditableResultChange = (field: keyof FoodAnalysisResult, value: string | number) => {

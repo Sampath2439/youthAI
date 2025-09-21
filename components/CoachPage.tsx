@@ -5,6 +5,8 @@ import { startChatSession, generateIntroVideo } from '../services/geminiService'
 import { addWellnessDataPoint } from '../services/historyService';
 import { buildSystemInstruction } from '../services/contextService';
 import { UserCircleIcon, SparklesIcon, PlayCircleIcon } from './IconComponents';
+import { auth, db } from '../services/firebaseService';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface VideoModalProps {
   videoUrl: string;
@@ -53,13 +55,25 @@ export const CoachPage: React.FC = () => {
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const initializeChat = () => {
-        const instruction = buildSystemInstruction();
+    const initializeChat = async () => {
+        const instruction = await buildSystemInstruction();
         const chat = startChatSession(instruction);
         setChatSession(chat);
         setIsInitializing(false);
     };
     initializeChat();
+
+    if (auth.currentUser) {
+        const q = query(collection(db, "chatMessages"), where("userId", "==", auth.currentUser.uid), orderBy("createdAt"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const msgs: ChatMessage[] = [];
+            querySnapshot.forEach((doc) => {
+                msgs.push({ id: doc.id, ...doc.data() } as ChatMessage);
+            });
+            setMessages(msgs);
+        });
+        return () => unsubscribe();
+    }
   }, []);
 
   useEffect(() => {
@@ -104,37 +118,39 @@ export const CoachPage: React.FC = () => {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userInput.trim() || !chatSession || isLoading) return;
+    if (!userInput.trim() || !chatSession || isLoading || !auth.currentUser) return;
 
-    const userMessage: ChatMessage = { role: 'user', text: userInput };
-    setMessages(prev => [...prev, userMessage]);
+    const userMessageText = userInput;
     setUserInput('');
+
+    const userMessage: Omit<ChatMessage, 'id'> = {
+        role: 'user',
+        text: userMessageText,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp(),
+    };
+    await addDoc(collection(db, "chatMessages"), userMessage);
+
     setIsLoading(true);
     setError(null);
     
     try {
-        const stream = await chatSession.sendMessageStream({ message: userInput });
+        const stream = await chatSession.sendMessageStream({ message: userMessageText });
         
         let modelResponse = '';
-        setMessages(prev => [...prev, { role: 'model', text: '...' }]);
-
         for await (const chunk of stream) {
             modelResponse += chunk.text;
-            setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[newMessages.length - 1].text = modelResponse + '...';
-                return newMessages;
-            });
         }
         
-        setMessages(prev => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1].text = modelResponse;
-            return newMessages;
-        });
+        const modelMessage: Omit<ChatMessage, 'id'> = {
+            role: 'model',
+            text: modelResponse,
+            userId: auth.currentUser.uid,
+            createdAt: serverTimestamp(),
+        };
+        await addDoc(collection(db, "chatMessages"), modelMessage);
         
-        // Log interaction as a positive wellness event
-        addWellnessDataPoint(75, 'coach');
+        await addWellnessDataPoint(75, 'coach');
 
     } catch (err) {
         setError("Sorry, I couldn't get a response. Please try again.");
@@ -188,7 +204,7 @@ export const CoachPage: React.FC = () => {
 
           <div 
               ref={chatContainerRef}
-              className="h-[50vh] bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-y-auto"
+              className="h-96 md:h-[50vh] bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-y-auto"
           >
               {messages.map((msg, index) => (
                   <div key={index} className={`flex items-start gap-3 my-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>

@@ -1,6 +1,6 @@
 import { GamificationData, Badge, BadgeId } from '../types';
-
-const GAMIFICATION_KEY = 'mindfulme-gamification-data';
+import { auth, db } from './firebaseService';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const getTodayDateString = (): string => new Date().toISOString().split('T')[0];
 
@@ -13,11 +13,32 @@ const ALL_BADGES: Omit<Badge, 'unlocked'>[] = [
     { id: 'mindful_pro', name: 'Mindful Pro', description: 'Reached the highest wellness level.', icon: 'BrainCircuitIcon' },
 ];
 
-export const getGamificationData = (): GamificationData => {
+const defaultGamificationData = (userId: string): GamificationData => ({
+    xp: 0,
+    level: 1,
+    streak: 0,
+    lastActivityDate: null,
+    badges: {
+        streak_3: false,
+        streak_7: false,
+        first_meditation: false,
+        first_journal: false,
+        first_diet: false,
+        mindful_pro: false,
+    },
+    userId,
+});
+
+export const getGamificationData = async (): Promise<GamificationData> => {
+    if (!auth.currentUser) throw new Error("User not logged in");
+
+    const userDocRef = doc(db, 'gamification', auth.currentUser.uid);
+
     try {
-        const storedData = localStorage.getItem(GAMIFICATION_KEY);
-        if (storedData) {
-            const data: GamificationData = JSON.parse(storedData);
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data() as GamificationData;
             // Check streak
             const today = new Date();
             const lastDate = data.lastActivityDate ? new Date(data.lastActivityDate) : null;
@@ -25,49 +46,39 @@ export const getGamificationData = (): GamificationData => {
                 const diffTime = today.getTime() - lastDate.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 if (diffDays > 1) {
-                    data.streak = 0; // Reset streak if more than 1 day has passed
+                    data.streak = 0; // Reset streak
                 }
             }
             return data;
+        } else {
+            // No data found, so create default data
+            const defaultData = defaultGamificationData(auth.currentUser.uid);
+            await setDoc(userDocRef, defaultData);
+            return defaultData;
         }
     } catch (e) {
-        console.error("Failed to parse gamification data", e);
+        console.error("Failed to get gamification data", e);
+        return defaultGamificationData(auth.currentUser.uid);
     }
-    
-    // Default data for new users
-    return {
-        xp: 0,
-        level: 1,
-        streak: 0,
-        lastActivityDate: null,
-        badges: {
-            streak_3: false,
-            streak_7: false,
-            first_meditation: false,
-            first_journal: false,
-            first_diet: false,
-            mindful_pro: false,
-        },
-    };
 };
 
-const saveGamificationData = (data: GamificationData) => {
-    localStorage.setItem(GAMIFICATION_KEY, JSON.stringify(data));
+const saveGamificationData = async (data: GamificationData) => {
+    if (!auth.currentUser) throw new Error("User not logged in");
+    const userDocRef = doc(db, 'gamification', auth.currentUser.uid);
+    await setDoc(userDocRef, data);
 };
 
-export const addXP = (amount: number, badgeToCheck?: BadgeId) => {
-    const data = getGamificationData();
+export const addXP = async (amount: number, badgeToCheck?: BadgeId) => {
+    const data = await getGamificationData();
     
-    // Update XP and Level
     data.xp += amount;
-    const levelThresholds = [100, 300]; // XP for level 2, level 3
+    const levelThresholds = [100, 300];
     if (data.level === 1 && data.xp >= levelThresholds[0]) data.level = 2;
     if (data.level === 2 && data.xp >= levelThresholds[1]) {
         data.level = 3;
         data.badges.mindful_pro = true;
     }
 
-    // Update Streak
     const todayStr = getTodayDateString();
     if (data.lastActivityDate !== todayStr) {
         const yesterday = new Date();
@@ -75,27 +86,25 @@ export const addXP = (amount: number, badgeToCheck?: BadgeId) => {
         const yesterdayStr = yesterday.toISOString().split('T')[0];
 
         if (data.lastActivityDate === yesterdayStr) {
-            data.streak += 1; // It's a consecutive day
+            data.streak += 1;
         } else {
-            data.streak = 1; // It's a new day, but not consecutive
+            data.streak = 1;
         }
         data.lastActivityDate = todayStr;
     }
 
-    // Check for specific badge unlock
     if (badgeToCheck && !data.badges[badgeToCheck]) {
         data.badges[badgeToCheck] = true;
     }
 
-    // Check streak badges
     if (data.streak >= 3) data.badges.streak_3 = true;
     if (data.streak >= 7) data.badges.streak_7 = true;
 
-    saveGamificationData(data);
+    await saveGamificationData(data);
 };
 
-export const getBadges = (): Badge[] => {
-    const data = getGamificationData();
+export const getBadges = async (): Promise<Badge[]> => {
+    const data = await getGamificationData();
     return ALL_BADGES.map(badge => ({
         ...badge,
         unlocked: data.badges[badge.id] || false,

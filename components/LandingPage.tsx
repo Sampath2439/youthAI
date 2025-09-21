@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { HeartPulseIcon, BrainCircuitIcon, MessageSquareIcon, BookOpenIcon, MusicNoteIcon, Bars3Icon, XMarkIcon } from './IconComponents';
+import React, { useState, useEffect } from 'react';
+import { HeartPulseIcon, StarIcon, BrainCircuitIcon, MessageSquareIcon, BookOpenIcon, MusicNoteIcon, Bars3Icon, XMarkIcon } from './IconComponents';
 import { auth } from '../services/firebaseService';
 import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -9,9 +9,7 @@ interface LandingPageProps {
 
 const navLinks = [
   { name: 'Home', href: '#' },
-  { name: 'Features', href: '#features' },
   { name: 'About', href: '#about' },
-  { name: 'Contact', href: '#contact' },
 ];
 
 const features = [
@@ -31,9 +29,9 @@ const features = [
     icon: BookOpenIcon,
   },
   {
-    name: 'AI Music Scapes',
-    description: 'Based on your mood, our AI generates a personalized, soothing soundscape to help you relax or focus.',
-    icon: MusicNoteIcon,
+    name: 'Diet Tracker',
+    description: 'Based on your Daily Meal intake our ai will give you the Meal score',
+    icon: StarIcon,
   },
 ];
 
@@ -43,6 +41,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const images = [
+    { src: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=600&auto=format&fit=crop", alt: "Person meditating peacefully" },
+    { src: "https://images.unsplash.com/photo-1511376770601-d05275773090?q=80&w=600&auto=format&fit=crop", alt: "Abstract AI technology concept" },
+    { src: "https://images.unsplash.com/photo-1522204523234-8729aa6ed03d?q=80&w=600&auto=format&fit=crop", alt: "Diverse group of people supporting each other" },
+  ];
+
+  const [activeImage, setActiveImage] = useState(0);
+
+  const nextImage = () => {
+    setActiveImage((current) => (current + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setActiveImage((current) => (current - 1 + images.length) % images.length);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(nextImage, 5000); // Change image every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
@@ -171,7 +190,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             <div className="absolute top-0 left-0 -z-10 w-72 h-72 bg-purple-200/50 rounded-full filter blur-3xl opacity-50 animate-float"></div>
             <div className="absolute bottom-0 right-0 -z-10 w-72 h-72 bg-sky-200/50 rounded-full filter blur-3xl opacity-50 animate-float" style={{animationDelay: '2s'}}></div>
 
-          <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+          <div className="mx-auto max-w-2xl py-16 sm:py-48 lg:py-56">
             <div className="text-center">
               <p className="text-lg font-semibold leading-8 text-sky-300">
                 A calmer mind begins with a single step.
@@ -182,17 +201,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
               <p className="mt-6 text-lg leading-8 text-slate-200">
                 Track your emotions, gain AI-driven insights, and build mindful habits for a healthier you.
               </p>
-              <div className="mt-10 flex items-center justify-center gap-x-6">
-                <button
-                  onClick={() => setLoginModalOpen(true)}
-                  className="rounded-md bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-transform hover:scale-105"
-                >
-                  Get Started
-                </button>
-                <a href="#features" className="text-sm font-semibold leading-6 text-white border border-white/80 rounded-md px-5 py-3 hover:bg-white/20 transition-colors">
-                  Learn More <span aria-hidden="true">→</span>
-                </a>
-              </div>
               <div className="mt-12">
                   <p className="text-sm text-slate-300">Trusted by 10,000+ users worldwide</p>
                    <div className="mt-2 flex items-center justify-center -space-x-2">
@@ -237,7 +245,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         </div>
         
         {/* About Us Section */}
-        <section id="about" className="py-24 sm:py-32">
+        <section id="about" className="py-24 sm:py-32 bg-slate-50 dark:bg-slate-900">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-2">
               <div className="lg:pr-4">
@@ -250,11 +258,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                   By leveraging the power of AI, we aim to make mental health support more immediate, engaging, and stigma-free. Our goal is to be your trusted companion on your journey to a calmer, happier mind.
                 </p>
               </div>
-              <img
-                src="https://images.unsplash.com/photo-1583623952385-237416954736?q=80&w=1887&auto=format&fit=crop"
-                alt="A person meditating peacefully in nature"
-                className="w-full rounded-2xl shadow-xl ring-1 ring-slate-400/10"
-              />
+              <div className="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden rounded-2xl shadow-xl ring-1 ring-slate-400/10">
+                {images.map((img, index) => (
+                  <img
+                    key={index}
+                    src={img.src}
+                    alt={img.alt}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${activeImage === index ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                ))}
+                <button
+                  onClick={prevImage}
+                  className="absolute top-1/2 left-4 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full z-10 hover:bg-black/70 focus:outline-none"
+                >
+                  &#10094;
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute top-1/2 right-4 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full z-10 hover:bg-black/70 focus:outline-none"
+                >
+                  &#10095;
+                </button>
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 z-10">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveImage(index)}
+                      className={`w-3 h-3 rounded-full ${activeImage === index ? 'bg-white' : 'bg-white/50'} focus:outline-none`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mt-20 mx-auto max-w-2xl text-center">
+                <p className="text-base font-semibold leading-7 text-blue-600 dark:text-blue-400">About Mindfulme</p>
+                <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">Your AI-Powered Mental Wellness Companion</h2>
+                <p className="mt-6 text-lg leading-8 text-slate-600 dark:text-slate-400">
+                  Mindfulme is an innovative AI-powered mental wellness companion designed to help you understand and improve your emotional well-being. It offers a suite of tools including emotion tracking, AI-driven insights, guided meditations, personalized music scapes, and more.
+                </p>
+                <p className="mt-4 text-lg leading-8 text-slate-600 dark:text-slate-400">
+                  This application is for anyone looking to proactively manage their mental health, reduce stress, build mindful habits, and gain deeper self-awareness. It provides accessible, personalized, and stigma-free mental wellness support right at your fingertips.
+                </p>
+                <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400 italic">
+                  Proudly developed during the <span className="font-semibold text-blue-600 dark:text-blue-400">GEN AI EXCHANGE hackathon 2025</span>, showcasing the power of AI for mental well-being.
+                </p>
             </div>
           </div>
         </section>

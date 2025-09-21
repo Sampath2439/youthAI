@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getBreathingExercises } from '../services/geminiService';
 import { addWellnessDataPoint } from '../services/historyService';
 import { addXP } from '../services/gamificationService';
-import { BreathingExercise } from '../types';
+import { BreathingExercise, MeditationSession } from '../types';
 import { StarIcon, BookOpenIcon } from './IconComponents';
 import { FeedbackFlow } from './FeedbackFlow';
 
@@ -105,19 +105,37 @@ export const MeditationPage: React.FC = () => {
         setSessionState('active');
     };
     
-    const handleFinishSession = () => {
-        if (postRating === 0) return;
+    const handleFinishSession = async () => {
+        if (postRating === 0 || !auth.currentUser || !selectedExercise) return;
+
+        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+        const { db } = await import('../services/firebaseService');
+
         // Calculate score based on post-session feeling (1-5 rating to 20-100 score).
         const score = postRating * 20;
         addWellnessDataPoint(score, 'meditation');
-        localStorage.setItem('mindfulme-meditation-completed-date', getTodayDateString());
         
-        // Add XP for completing a session
-        const xpGained = 15;
-        addXP(xpGained, 'first_meditation');
-        window.dispatchEvent(new CustomEvent('xp-gain', { detail: { amount: xpGained } }));
+        const newSession: Omit<MeditationSession, 'id'> = {
+            userId: auth.currentUser.uid,
+            exerciseName: selectedExercise.name,
+            rating: postRating,
+            createdAt: serverTimestamp(),
+        };
 
-        setSessionState('summary');
+        try {
+            await addDoc(collection(db, "meditationSessions"), newSession);
+
+            // Add XP for completing a session
+            const xpGained = 15;
+            await addXP(xpGained, 'first_meditation');
+            window.dispatchEvent(new CustomEvent('xp-gain', { detail: { amount: xpGained } }));
+
+            setSessionState('summary');
+        } catch (error) {
+            console.error("Error saving meditation session: ", error);
+            // Still proceed to summary even if save fails, to not disrupt user flow
+            setSessionState('summary');
+        }
     };
 
     const handleReset = () => {
