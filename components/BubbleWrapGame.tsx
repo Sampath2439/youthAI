@@ -13,7 +13,7 @@ const ThemedBubble: FC<{ theme: BubbleTheme }> = ({ theme }) => {
         case 'classic':
         default:
             return (
-                <div 
+                <div
                     className="w-12 h-12 rounded-full"
                     style={{
                         background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6), rgba(255,255,255,0.1))',
@@ -55,7 +55,7 @@ export const BubbleWrapGame: React.FC = () => {
 
     const handlePop = (id: number) => {
         if (poppedBubbles.has(id)) return;
-        
+
         setPoppedBubbles(prev => new Set(prev).add(id));
         triggerParticles(id);
 
@@ -88,7 +88,7 @@ export const BubbleWrapGame: React.FC = () => {
                 style: { '--transform-end': `translate(${x}px, ${y}px)` } as React.CSSProperties,
             };
             setParticles(prev => [...prev, newParticle]);
-            
+
             setTimeout(() => {
                 setParticles(prev => prev.filter(p => p.id !== newParticle.id));
             }, 500);
@@ -127,7 +127,14 @@ export const BubbleWrapGame: React.FC = () => {
                         );
                     })}
                 </div>
+
             </main>
+            <div className="content-center justify-center">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Pop & Chill</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">Click or tap on the bubbles to pop them. There's no goal, just relax and enjoy the satisfying pops!</p>
+
+            </div>
         </div>
+
     );
 };

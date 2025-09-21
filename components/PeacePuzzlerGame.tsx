@@ -250,7 +250,7 @@ export const PeacePuzzlerGame: React.FC<PeacePuzzlerGameProps> = ({ onBack }) =>
                     <div>
                         <h3 className="font-bold text-slate-700 dark:text-slate-200">How to Play</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Swap adjacent tiles to match 3 or more of the same color. Each match fills your Calm Ring. Complete the ring to finish!
+                            Swap adjacent tiles to match 3 or more of the same color, either horizontally or vertically. Matched tiles will disappear, and new ones will fall into place. Fill the 'Calm Ring' to 100% to complete the puzzle. Use the 'Hint' button if you get stuck, or the game will reshuffle automatically if no moves are left.
                         </p>
                     </div>
                 </div>

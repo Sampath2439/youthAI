@@ -293,7 +293,9 @@ export const WordFlowGame: FC<WordFlowGameProps> = ({ onBack }) => {
                         </>}
                          {gameState === 'idle' && <>
                             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Word Flow</h2>
-                            <p className="text-slate-600 dark:text-slate-400 mt-2">Find all the words to complete the puzzle.</p>
+                            <p className="text-slate-600 dark:text-slate-400 mt-2">
+                                Form words by clicking on the letters in the wheel. Find all the words in the puzzle to complete the level. Use the 'Shuffle' button to rearrange the letters if you get stuck, or the 'Hint' button to reveal a letter in an unsolved word (costs hints). Earn more hints by completing levels and maintaining a daily streak.
+                            </p>
                             <button onClick={handlePlay} className="mt-6 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600">Play</button>
                         </>}
                         {showPauseMenu && <>

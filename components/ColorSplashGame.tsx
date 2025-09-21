@@ -99,6 +99,8 @@ export const ColorSplashGame: React.FC = () => {
             <div className="absolute bottom-[5%] left-[5%] w-48 h-32 bg-pink-200/10 dark:bg-pink-800/10 rounded-full blur-2xl opacity-50"></div>
             
             <main className="flex-grow flex flex-col items-center justify-center p-4 z-10">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Color Splash</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">Tap the colorful circle to create soothing color splashes. Watch your Calm Points grow as you relax. You can pause the game at any time. Customize colors and animation speed in the game settings.</p>
                 <button
                     ref={canvasRef}
                     onClick={handleSplash}
