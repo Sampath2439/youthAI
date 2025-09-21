@@ -1,0 +1,8 @@
+{
+  "name": "Youth Mental Wellness AI",
+  "description": "An AI-powered platform for mental wellness, offering personalized predictions, emotion detection, and AI coaching for meditation and well-being.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
