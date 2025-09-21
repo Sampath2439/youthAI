@@ -4,6 +4,7 @@ import {
     AccessibilityIcon, CircleHelpIcon, InfoIcon, ChevronDownIcon, LogOutIcon 
 } from './IconComponents';
 
+
 const PrivacyPolicyModal: FC<{ onClose: () => void }> = ({ onClose }) => {
     return (
         <div 
