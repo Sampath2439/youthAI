@@ -60,7 +60,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
   const suggestion = getSuggestion();
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-blue-500 to-purple-600 text-white relative">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-blue-950 dark:to-indigo-950 text-slate-800 dark:text-slate-100 relative">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-4">Explore Your Wellness Journey</h1>
         <p className="text-base sm:text-lg text-center text-blue-100 mb-8">

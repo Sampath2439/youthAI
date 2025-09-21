@@ -7,6 +7,7 @@ import { getStorage } from "firebase/storage";
 const firebaseConfig = {
   apiKey: "AIzaSyAnKuY5iv77yFQG04BrMQc3BRiKjgqaSuI",
   authDomain: "mentalwelllnessai.firebaseapp.com",
+  databaseURL : "https://mentalwelllnessai-default-rtdb.firebaseio.com",
   projectId: "mentalwelllnessai",
   storageBucket: "mentalwelllnessai.firebasestorage.app",
   messagingSenderId: "1099499604519",

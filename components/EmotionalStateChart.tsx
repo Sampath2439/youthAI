@@ -16,23 +16,30 @@ export const EmotionalStateChart: React.FC = () => {
     const [yearBase, setYearBase] = useState(new Date().getFullYear() - 1);
 
     useEffect(() => {
-        setHistory(getHistory());
+        const fetchHistory = async () => {
+            const fetchedHistory = await getHistory();
+            setHistory(fetchedHistory);
+        };
+        fetchHistory();
+
         // Listen for history updates from other components
-        const handleHistoryUpdate = () => setHistory(getHistory());
+        const handleHistoryUpdate = () => fetchHistory(); // Re-fetch on update
         window.addEventListener('historyUpdated', handleHistoryUpdate);
         return () => window.removeEventListener('historyUpdated', handleHistoryUpdate);
     }, []);
 
     const dataMap = useMemo(() => {
         const map = new Map<string, number>();
-        history.forEach(item => {
-            if (item.dataPoints && item.dataPoints.length > 0) {
-                const avgScore = item.dataPoints.reduce((sum, p) => sum + p.value, 0) / item.dataPoints.length;
-                map.set(item.date, avgScore);
-            } else {
-                map.set(item.date, 0);
-            }
-        });
+        if (Array.isArray(history)) { // Defensive check
+            history.forEach(item => {
+                if (item.dataPoints && item.dataPoints.length > 0) {
+                    const avgScore = item.dataPoints.reduce((sum, p) => sum + p.value, 0) / item.dataPoints.length;
+                    map.set(item.date, avgScore);
+                } else {
+                    map.set(item.date, 0);
+                }
+            });
+        }
         return map;
     }, [history]);
     

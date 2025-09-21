@@ -138,7 +138,7 @@ const PredictorPage: React.FC<{ onNavigate: (page: Page, payload?: { initialProm
 import { ExplorePage } from './components/ExplorePage';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('landing');
+  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isGameMode, setIsGameMode] = useState(false); // Define isGameMode
   const [theme, setTheme] = useState<Theme>('light'); // Placeholder for theme
@@ -164,14 +164,10 @@ function App() {
     setGameSubtitle('');
   }; // Placeholder for gameBackAction
 
-  const handleLogin = () => {
-    setCurrentPage('dashboard');
-  };
-
   const renderPage = () => {
     switch (currentPage) {
       case 'landing':
-        return <LandingPage onLogin={handleLogin} />;
+        return <LandingPage/>;
       case 'dashboard':
         return <DashboardPage />;
       case 'predictor':
@@ -200,10 +196,6 @@ function App() {
         return <DashboardPage />;
     }
   };
-
-  if (currentPage === 'landing') {
-    return <LandingPage onLogin={handleLogin} />;
-  }
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-blue-950 dark:to-indigo-950 flex font-sans">

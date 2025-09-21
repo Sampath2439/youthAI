@@ -30,7 +30,7 @@ const defaultGamificationData = (userId: string): GamificationData => ({
 });
 
 export const getGamificationData = async (): Promise<GamificationData> => {
-    if (!auth.currentUser) throw new Error("User not logged in");
+    if (!auth.currentUser) return defaultGamificationData("guest"); // Return default data for guest user
 
     const userDocRef = doc(db, 'gamification', auth.currentUser.uid);
 
@@ -63,7 +63,7 @@ export const getGamificationData = async (): Promise<GamificationData> => {
 };
 
 const saveGamificationData = async (data: GamificationData) => {
-    if (!auth.currentUser) throw new Error("User not logged in");
+    if (!auth.currentUser) return; // Do not save if no user is logged in
     const userDocRef = doc(db, 'gamification', auth.currentUser.uid);
     await setDoc(userDocRef, data);
 };
