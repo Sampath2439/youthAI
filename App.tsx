@@ -167,7 +167,7 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'landing':
-        return <LandingPage/>;
+        return <LandingPage />;
       case 'dashboard':
         return <DashboardPage />;
       case 'predictor':
@@ -189,7 +189,11 @@ function App() {
       case 'help':
         return <HelpPage />;
       case 'calmArcade':
-        return <CalmArcadePage />;
+        return <CalmArcadePage 
+          onSetGameMode={setIsGameMode}
+          onSetGameSubtitle={setGameSubtitle}
+          onSetGameBackAction={gameBackAction}
+        />;
       case 'explore':
         return <ExplorePage onNavigate={setCurrentPage} />;
       default:

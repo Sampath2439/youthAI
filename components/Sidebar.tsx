@@ -15,6 +15,8 @@ interface SidebarProps {
 
 const mainNavItems = [
     { icon: LayoutGridIcon, page: 'dashboard' as const, label: 'Dashboard' },
+    { icon: TargetIcon, page: 'predictor' as const, label: 'Predictor' },
+    { icon: MusicNoteIcon, page: 'music' as const, label: 'Music' },
     { icon: MessageSquareIcon, page: 'aiTherapist' as const, label: 'AI Therapist' },
     { icon: BookOpenIcon, page: 'meditation' as const, label: 'Meditation' },
     { icon: PenSquareIcon, page: 'journal' as const, label: 'Journal' },
@@ -25,9 +27,8 @@ const mainNavItems = [
 ];
 
 const moreNavItems = [
-    { icon: TargetIcon, page: 'predictor' as const, label: 'Predictor' },
-    { icon: MusicNoteIcon, page: 'music' as const, label: 'Music' },
-    { icon: SettingsIcon, page: 'settings' as const, label: 'Settings' },
+    
+    { icon: SettingsIcon, page: 'settings' as const, label: 'Settings' }
 ];
 
 const footerNavItems = [

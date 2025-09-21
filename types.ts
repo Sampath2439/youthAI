@@ -140,10 +140,10 @@ export interface JournalEntry {
 
 export interface MeditationSession {
     id?: string; // Firestore document ID
-    userId: string;
+    userId?: string;
     exerciseName: string;
     rating: number; // 1-5
-    createdAt: any; // Firestore server timestamp
+    createdAt?: any; // Firestore server timestamp
 }
 
 // New types for Gamification
